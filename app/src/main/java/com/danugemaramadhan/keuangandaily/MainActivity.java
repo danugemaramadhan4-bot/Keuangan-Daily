@@ -6,13 +6,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebResourceRequest;
-import androidx.annotation.Nullable;
 import android.net.Uri;
 import android.view.Window;
 
 public class MainActivity extends Activity {
     private WebView web;
-    @Override public void onCreate(@Nullable Bundle savedInstanceState) {
+    @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Window w=getWindow();
         w.setStatusBarColor(android.graphics.Color.rgb(6,18,15));
