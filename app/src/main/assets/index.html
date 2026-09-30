@@ -1100,6 +1100,33 @@ signIn:async()=>{
 window.cloudSignIn=()=>window.firebaseCloud.signIn();
 window.cloudSyncNow=()=>window.firebaseCloud.sync();
 window.cloudSignOut=()=>window.firebaseCloud.signOut();
+ window.onNativeGoogleSignIn=async function(idToken){
+  try{
+    const credential=GoogleAuthProvider.credential(idToken);
+    const result=await signInWithCredential(auth,credential);
+
+    currentUser=result.user||null;
+
+    try{
+      await setPersistence(auth,browserLocalPersistence);
+    }catch(e){}
+
+    updateCard();
+
+    if(currentUser) await sync();
+
+    if(window.render) window.render('account');
+
+    showToast('Berhasil login dengan Google');
+  }catch(e){
+    console.error('Native Google Login:',e);
+    showToast('Login Google gagal: '+(e.message||'Unknown error'));
+  }
+};
+
+window.onNativeGoogleSignInError=function(message){
+  showToast('Login Google gagal: '+message);
+};
 
 if(configured){
   try{
