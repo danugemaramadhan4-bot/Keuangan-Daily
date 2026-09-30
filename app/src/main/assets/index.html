@@ -763,7 +763,7 @@ function account(){
   const savePct=target?Math.min(100,(Number(d.savings||0)/target)*100):0;
   $id("app").innerHTML=`
   <div class="pageTitle">Profil & Pengaturan</div>
-  <div class="section"><div class="cloudCard" id="cloudAccountCard"><div class="cloudUser"><div class="cloudAvatar">G</div><div class="cloudInfo"><b>Login & Sinkronisasi Cloud</b><small>Masuk dengan Google untuk menyimpan data di cloud</small></div></div><button class="googleBtn" onclick="cloudSignIn()"><span>G</span> Masuk dengan Google</button><div class="cloudHint">Data tetap tersimpan di HP saat offline. Setelah login, transaksi dan pengaturan dapat disinkronkan ke akun Anda.</div></div></div>
+  <div class="section"><div class="cloudCard" id="cloudAccountCard"><div class="cloudUser"><div class="cloudAvatar">G</div><div class="cloudInfo"><b>Login & Sinkronisasi Cloud</b><small>Masuk dengan Google untuk menyimpan data di cloud</small></div></div><button class="googleBtn" type="button" onclick="testGoogleButton()"><span>G</span> Masuk dengan Google</button><div class="cloudHint">Data tetap tersimpan di HP saat offline. Setelah login, transaksi dan pengaturan dapat disinkronkan ke akun Anda.</div></div></div>
   <div class="section">
     <div class="card">
       <div class="head"><h2>Pengaturan Keuangan</h2><span class="pill">Aktif</span></div>
