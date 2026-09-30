@@ -78,6 +78,11 @@ public class MainActivity extends Activity {
 
     @JavascriptInterface
     public void signInWithGoogle() {
+        android.widget.Toast.makeText(
+        this,
+        "TOMBOL GOOGLE TERHUBUNG",
+        android.widget.Toast.LENGTH_LONG
+).show();
 
         runOnUiThread(() -> {
 
