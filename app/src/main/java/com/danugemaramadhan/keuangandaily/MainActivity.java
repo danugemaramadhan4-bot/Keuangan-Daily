@@ -7,6 +7,9 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
+import android.net.Uri;
+import android.view.Window;
 
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
@@ -14,6 +17,7 @@ import androidx.credentials.CredentialManagerCallback;
 import androidx.credentials.CustomCredential;
 import androidx.credentials.GetCredentialRequest;
 import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
 
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
@@ -31,13 +35,9 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getWindow().setStatusBarColor(
-                android.graphics.Color.rgb(6, 18, 15)
-        );
-
-        getWindow().setNavigationBarColor(
-                android.graphics.Color.rgb(4, 17, 14)
-        );
+        Window w = getWindow();
+        w.setStatusBarColor(android.graphics.Color.rgb(6, 18, 15));
+        w.setNavigationBarColor(android.graphics.Color.rgb(4, 17, 14));
 
         web = new WebView(this);
         setContentView(web);
@@ -54,119 +54,172 @@ public class MainActivity extends Activity {
 
         credentialManager = CredentialManager.create(this);
 
-        web.addJavascriptInterface(new GoogleBridge(), "Android");
+        web.addJavascriptInterface(this, "Android");
 
-        web.setWebViewClient(new WebViewClient());
+        web.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(
+                    WebView view,
+                    WebResourceRequest req
+            ) {
+                Uri u = req.getUrl();
+
+                if ("http".equals(u.getScheme())
+                        || "https".equals(u.getScheme())) {
+                    return false;
+                }
+
+                return true;
+            }
+        });
 
         web.loadUrl("file:///android_asset/index.html");
     }
 
-    public class GoogleBridge {
+    @JavascriptInterface
+    public void signInWithGoogle() {
 
-        @JavascriptInterface
-        public void signInWithGoogle() {
+        runOnUiThread(() -> {
 
-            GetGoogleIdOption googleIdOption =
-                    new GetGoogleIdOption.Builder()
-                            .setServerClientId(
-                                    getString(
-                                            com.danugemaramadhan.keuangandaily.R.string.default_web_client_id
-                                    )
-                            )
-                            .setFilterByAuthorizedAccounts(false)
-                            .build();
+            try {
 
-            GetCredentialRequest request =
-                    new GetCredentialRequest.Builder()
-                            .addCredentialOption(googleIdOption)
-                            .build();
+                GetGoogleIdOption googleIdOption =
+                        new GetGoogleIdOption.Builder()
+                                .setFilterByAuthorizedAccounts(false)
+                                .setServerClientId(
+                                        getString(
+                                                R.string.default_web_client_id
+                                        )
+                                )
+                                .build();
 
-            credentialManager.getCredentialAsync(
-                    MainActivity.this,
-                    request,
-                    new CancellationSignal(),
-                    Executors.newSingleThreadExecutor(),
-                    new CredentialManagerCallback<GetCredentialResponse, Exception>() {
+                GetCredentialRequest request =
+                        new GetCredentialRequest.Builder()
+                                .addCredentialOption(googleIdOption)
+                                .build();
 
-                        @Override
-                        public void onResult(GetCredentialResponse result) {
+                credentialManager.getCredentialAsync(
+                        this,
+                        request,
+                        new CancellationSignal(),
+                        Executors.newSingleThreadExecutor(),
+                        new CredentialManagerCallback<
+                                GetCredentialResponse,
+                                GetCredentialException
+                                >() {
 
-                            Credential credential =
-                                    result.getCredential();
+                            @Override
+                            public void onResult(
+                                    GetCredentialResponse result
+                            ) {
 
-                            if (credential instanceof CustomCredential) {
+                                Credential credential =
+                                        result.getCredential();
 
-                                CustomCredential customCredential =
-                                        (CustomCredential) credential;
+                                if (credential instanceof CustomCredential) {
 
-                                if (GoogleIdTokenCredential
-                                        .TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
-                                        .equals(customCredential.getType())) {
+                                    CustomCredential customCredential =
+                                            (CustomCredential) credential;
 
-                                    try {
+                                    if (GoogleIdTokenCredential
+                                            .TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                                            .equals(
+                                                    customCredential.getType()
+                                            )) {
 
-                                        GoogleIdTokenCredential googleCredential =
-                                                GoogleIdTokenCredential.createFrom(
-                                                        customCredential.getData()
-                                                );
+                                        try {
 
-                                        String idToken =
-                                                googleCredential.getIdToken();
+                                            GoogleIdTokenCredential
+                                                    googleCredential =
+                                                    GoogleIdTokenCredential
+                                                            .createFrom(
+                                                                    customCredential
+                                                                            .getData()
+                                                            );
 
-                                        web.post(() -> {
-
-                                            String js =
-                                                    "window.onNativeGoogleSignIn("
-                                                            + JSONObject.quote(idToken)
-                                                            + ");";
-
-                                            web.evaluateJavascript(
-                                                    js,
-                                                    null
+                                            sendToken(
+                                                    googleCredential
+                                                            .getIdToken()
                                             );
-                                        });
 
-                                    } catch (Exception e) {
-                                        sendError(e.getMessage());
+                                        } catch (Exception e) {
+
+                                            sendError(
+                                                    e.getMessage()
+                                            );
+                                        }
+
+                                    } else {
+
+                                        sendError(
+                                                "Credential Google tidak valid"
+                                        );
                                     }
 
                                 } else {
-                                    sendError("Credential Google tidak valid");
-                                }
 
-                            } else {
-                                sendError("Credential Google tidak ditemukan");
+                                    sendError(
+                                            "Credential Google tidak ditemukan"
+                                    );
+                                }
+                            }
+
+                            @Override
+                            public void onError(
+                                    GetCredentialException e
+                            ) {
+
+                                sendError(
+                                        e.getMessage() != null
+                                                ? e.getMessage()
+                                                : "Login Google dibatalkan"
+                                );
                             }
                         }
+                );
 
-                        @Override
-                        public void onError(Exception e) {
-                            sendError(
-                                    e.getMessage() != null
-                                            ? e.getMessage()
-                                            : "Login Google dibatalkan"
-                            );
-                        }
-                    }
-            );
-        }
+            } catch (Exception e) {
 
-        private void sendError(String message) {
+                sendError(e.getMessage());
+            }
+        });
+    }
 
-            web.post(() -> {
+    private void sendToken(String idToken) {
+
+        web.post(() -> {
+
+            try {
 
                 String js =
-                        "window.onNativeGoogleSignInError("
-                                + JSONObject.quote(
-                                        message != null
-                                                ? message
-                                                : "Unknown error"
-                                )
+                        "window.onNativeGoogleSignIn("
+                                + JSONObject.quote(idToken)
                                 + ");";
 
                 web.evaluateJavascript(js, null);
-            });
-        }
+
+            } catch (Exception e) {
+
+                sendError(e.getMessage());
+            }
+        });
+    }
+
+    private void sendError(String message) {
+
+        web.post(() -> {
+
+            String js =
+                    "window.onNativeGoogleSignInError("
+                            + JSONObject.quote(
+                                    message != null
+                                            ? message
+                                            : "Unknown error"
+                            )
+                            + ");";
+
+            web.evaluateJavascript(js, null);
+        });
     }
 
     @Override
@@ -179,4 +232,6 @@ public class MainActivity extends Activity {
         }
     }
 }
-Add native Google Sign-In bridge
+    
+        
+                                    
