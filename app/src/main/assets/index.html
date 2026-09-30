@@ -1060,47 +1060,61 @@ function updateCard(){
   const mode=document.getElementById('appMode');if(mode)mode.textContent='Cloud + Offline';
 }
 window.updateCloudAccountCard=updateCard;
-window.firebaseCloud={
-signIn:async()=>{
-  if(!configured){
-    showToast('Firebase Web App belum dikonfigurasi');
-    return;
+window.firebaseCloud = {
+  signIn: async () => {
+    if (!configured) {
+      showToast('Firebase Web App belum dikonfigurasi');
+      return;
+    }
+
+    if (!auth) {
+      showToast('Firebase belum siap. Muat ulang halaman dan coba lagi.');
+      return;
+    }
+
+    if (window.Android && window.Android.signInWithGoogle) {
+      window.Android.signInWithGoogle();
+      return;
+    }
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      currentUser = result.user || null;
+
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (e) {}
+
+      updateCard();
+
+      if (currentUser) await sync();
+
+      if (window.render) window.render('account');
+
+    } catch (e) {
+      console.error('Google Login:', e);
+      showToast('Login Google gagal: ' + (e.message || 'Unknown error'));
+    }
+  },
+
+  sync: async () => {
+    return await sync();
+  },
+
+  signOut: async () => {
+    try {
+      await signOut(auth);
+      currentUser = null;
+      updateCard();
+
+      if (window.render) window.render('account');
+
+      showToast('Berhasil keluar');
+    } catch (e) {
+      showToast('Gagal keluar');
+    }
   }
-
-  if(!auth){
-    showToast('Firebase belum siap. Muat ulang halaman dan coba lagi.');
-    return;
-  }
-
-  if(window.Android && window.Android.signInWithGoogle){
-    window.Android.signInWithGoogle();
-    return;
-  }
-
-  try{
-    const result=await signInWithPopup(auth,provider);
-    currentUser=result.user||null;
-
-    try{
-      await setPersistence(auth,browserLocalPersistence);
-    }catch(e){}
-
-    updateCard();
-
-    if(currentUser) await sync();
-
-    if(window.render) window.render('account');
-  }catch(e){
-    console.error('Google Login:',e);
-    let msg=e.message||'Login Google gagal';
-
-    try{showToast(msg)}catch(_){alert(msg)}
-  }
-},{try{await signOut(auth);showToast('Berhasil keluar');if(window.render)window.render('account')}catch(e){showToast('Gagal keluar')}}};
-window.cloudSignIn=()=>window.firebaseCloud.signIn();
-window.cloudSyncNow=()=>window.firebaseCloud.sync();
-window.cloudSignOut=()=>window.firebaseCloud.signOut();
- window.onNativeGoogleSignIn=async function(idToken){
+};
   try{
     const credential=GoogleAuthProvider.credential(idToken);
     const result=await signInWithCredential(auth,credential);
