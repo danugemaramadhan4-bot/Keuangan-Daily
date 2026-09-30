@@ -25,6 +25,9 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Get SHA-1
+        run: gradle signingReport
+
       - name: Build APK
         run: gradle assembleDebug
 
