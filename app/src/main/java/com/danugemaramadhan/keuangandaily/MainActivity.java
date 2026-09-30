@@ -179,3 +179,4 @@ public class MainActivity extends Activity {
         }
     }
 }
+Add native Google Sign-In bridge
