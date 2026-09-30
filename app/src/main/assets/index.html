@@ -1116,6 +1116,8 @@ window.firebaseCloud = {
   }
 };
   try{
+    window.onNativeGoogleSignIn=async function(idToken){
+  try{
     const credential=GoogleAuthProvider.credential(idToken);
     const result=await signInWithCredential(auth,credential);
 
@@ -1132,6 +1134,7 @@ window.firebaseCloud = {
     if(window.render) window.render('account');
 
     showToast('Berhasil login dengan Google');
+
   }catch(e){
     console.error('Native Google Login:',e);
     showToast('Login Google gagal: '+(e.message||'Unknown error'));
@@ -1139,6 +1142,8 @@ window.firebaseCloud = {
 };
 
 window.onNativeGoogleSignInError=function(message){
+  showToast('Login Google gagal: '+message);
+};
   showToast('Login Google gagal: '+message);
 };
 
