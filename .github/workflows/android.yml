@@ -39,7 +39,11 @@ jobs:
             -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Get SHA-1
-        run: gradle signingReport
+        run: |
+          keytool -list -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -alias AndroidDebugKey | grep SHA1
 
       - name: Build APK
         run: gradle assembleDebug
