@@ -828,7 +828,9 @@ function addTx(){let a=+$id("amount").value;if(!a){showToast("Nominal belum diis
 function backup(){let b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup-keuangan.json";a.click();showToast("Backup dibuat")}
 function restore(x){let f=x.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let z=JSON.parse(r.result);if(!z.tx)throw 0;d=z;save();if(window.firebaseCloud&&window.firebaseCloud.sync)window.firebaseCloud.sync();showToast("Data dipulihkan");render("home")}catch(e){showToast("Backup tidak valid")}};r.readAsText(f)}
 function resetAll(){if(confirm("Hapus semua data?")){localStorage.removeItem(KEY);location.reload()}}
-
+function testGoogleButton(){
+  alert("TOMBOL BERFUNGSI");
+}
 // Cloud sync hooks. Firebase integration is loaded below and fills window.cloudSignIn / window.cloudSyncNow.
 function cloudSignIn(){
   if(window.firebaseCloud&&typeof window.firebaseCloud.signIn==='function'){
